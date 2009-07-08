@@ -48,8 +48,6 @@ Now let's serialize it to JSON::
       "last_name": "Tom"
     }
 
-Since the class is part of a doctest, it's module becomes ``__builtin__``.
-
 We can also serialise other fields too::
 
     >>> from zope import interface, schema

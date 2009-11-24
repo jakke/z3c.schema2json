@@ -405,7 +405,7 @@ For all kinds of fields, like strings and ints...::
     >>> IAddress.providedBy(person.address)
     True
 
-Similarly, empty sequencies result in an empty list::
+Similarly, empty sequences result in an empty list::
 
     >>> json = '''
     ... {

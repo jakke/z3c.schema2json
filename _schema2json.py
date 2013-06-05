@@ -10,7 +10,12 @@ from zope.interface import Interface, alsoProvides
 from zope.location import Location
 from zope.schema import getFieldsInOrder
 from zope.schema.interfaces import IText, IInt, IObject, IList, IChoice, ISet
-from zope.schema.interfaces import IDatetime
+from zope.schema.interfaces import IDatetime, ITextLine
+
+def serialize_to_dict(schema, instance):
+    container = dict()
+    serialize_to_tree(container, schema, instance)
+    return container
 
 def serialize_to_tree(container, schema, instance):
     for name, field in getFieldsInOrder(schema):
@@ -64,6 +69,20 @@ class Text(grok.Adapter):
         if item is not None:
             return unicode(item)
         return None
+
+
+class TextLine(grok.Adapter):
+    grok.context(ITextLine)
+    grok.implements(IJSONGenerator)
+
+    def output(self, value):
+        return value
+
+    def input(self, item):
+        if item is not None:
+            return unicode(item)
+        return None
+
 
 class Int(grok.Adapter):
     grok.context(IInt)

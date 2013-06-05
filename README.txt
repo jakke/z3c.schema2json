@@ -16,6 +16,13 @@ Only object attributes described by zope schema are recognised by
 this package. Any attributes that do no have corresponding schema 
 descriptions will be lost in the serialization/deserialization process.
 
+Installation
+============
+Add ``z3c.schema2json`` as a dependency to your project. 
+Don't forget to add ``z3c.schema2json`` to your configure.zcml
+<grok:grok package="z3c.schema2json" /> or your adapters won't be registered
+to the global adapter registry.
+
 Serialization
 =============
 

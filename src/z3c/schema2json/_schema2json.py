@@ -6,11 +6,12 @@ except ImportError:
 import grokcore.component as grok
 import zope.datetime
 from persistent import Persistent
-from zope.interface import Interface, alsoProvides
 from zope.location import Location
 from zope.schema import getFieldsInOrder
 from zope.schema.interfaces import IText, IInt, IObject, IList, IChoice, ISet
-from zope.schema.interfaces import IDatetime, ITextLine
+from zope.schema.interfaces import IDatetime, ITextLine, IBool, IASCII
+
+from interfaces import IJSONGenerator
 
 def serialize_to_dict(schema, instance):
     container = dict()
@@ -38,8 +39,6 @@ def deserialize_from_dict(container, schema, instance):
         value = IJSONGenerator(field).input(value)
         field.set(instance, value)
     
-    alsoProvides(instance, schema)
-
 def deserialize(JSON, schema, instance):
     obj_dict = json.loads(JSON)
     deserialize_from_dict(obj_dict, schema, instance)
@@ -48,15 +47,6 @@ class GeneratedObject(Location, Persistent):
     def __init__(self):
         pass
 
-class IJSONGenerator(Interface):
-
-    def output(value):
-        """Output value as JSON item according to field.
-        """
-
-    def input(item):
-        """Input JSON item according to field and return value.
-        """
 
 class Text(grok.Adapter):
     grok.context(IText)
@@ -84,6 +74,21 @@ class TextLine(grok.Adapter):
         return None
 
 
+class ASCII(grok.Adapter):
+    grok.context(IASCII)
+    grok.implements(IJSONGenerator)
+
+    def output(self, value):
+        # return value
+        return u"" 
+
+    def input(self, item):
+        if item is not None:
+            # return unicode(item)
+            return u""
+        return None
+
+
 class Int(grok.Adapter):
     grok.context(IInt)
     grok.implements(IJSONGenerator)
@@ -94,6 +99,18 @@ class Int(grok.Adapter):
     def input(self, item):
         return item
 
+
+class Bool(grok.Adapter):
+    grok.context(IBool)
+    grok.implements(IJSONGenerator)
+
+    def output(self, value):
+        return value
+
+    def input(self, item):
+        return item
+
+
 class Object(grok.Adapter):
     grok.context(IObject)
     grok.implements(IJSONGenerator)
@@ -101,7 +118,11 @@ class Object(grok.Adapter):
     def output(self, value):
         cd = {}
         for name, field in getFieldsInOrder(self.context.schema):
+            if value is None:
+                return value
+
             cd[name] = IJSONGenerator(field).output(field.get(value))
+
         return cd
 
     def input(self, item):
@@ -117,7 +138,9 @@ class List(grok.Adapter):
         lst = []
         field = self.context.value_type
         for v in value:
-            lst.append(IJSONGenerator(field).output(v))
+            converted = IJSONGenerator(field).output(v)
+            if converted is not None:
+                lst.append(converted)
         return lst
 
     def input(self, item):
@@ -164,7 +187,9 @@ class Set(grok.Adapter):
         lst = []
         field = self.context.value_type
         for v in value:
-            lst.append(IJSONGenerator(field).output(v))
+            converted = IJSONGenerator(field).output(v)
+            if converted is not None:
+                lst.append(converted)
         return lst
 
     def input(self, item):

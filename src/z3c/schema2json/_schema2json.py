@@ -8,8 +8,8 @@ import zope.datetime
 from persistent import Persistent
 from zope.location import Location
 from zope.schema import getFieldsInOrder
-from zope.schema.interfaces import IText, IInt, IObject, IList, IChoice, ISet
-from zope.schema.interfaces import IDatetime, ITextLine, IBool, IASCII
+from zope.schema.interfaces import IText, IInt, IObject, IList, IChoice, ISet, ITuple
+from zope.schema.interfaces import IDatetime, ITextLine, IBool, IASCII, IURI
 
 from interfaces import IJSONGenerator
 
@@ -38,7 +38,7 @@ def deserialize_from_dict(container, schema, instance):
         field = schema[key]
         value = IJSONGenerator(field).input(value)
         field.set(instance, value)
-    
+
 def deserialize(JSON, schema, instance):
     obj_dict = json.loads(JSON)
     deserialize_from_dict(obj_dict, schema, instance)
@@ -73,6 +73,18 @@ class TextLine(grok.Adapter):
             return unicode(item)
         return None
 
+class URI(grok.Adapter):
+    grok.context(IURI)
+    grok.implements(IJSONGenerator)
+
+    def output(self, value):
+        return value
+
+    def input(self, item):
+        if item is not None:
+            return unicode(item)
+        return None
+
 
 class ASCII(grok.Adapter):
     grok.context(IASCII)
@@ -80,7 +92,7 @@ class ASCII(grok.Adapter):
 
     def output(self, value):
         # return value
-        return u"" 
+        return u""
 
     def input(self, item):
         if item is not None:
@@ -151,6 +163,28 @@ class List(grok.Adapter):
             IJSONGenerator(field).input(sub_item)
             for sub_item in item]
 
+
+class Tuple(grok.Adapter):
+    grok.context(ITuple)
+    grok.implements(IJSONGenerator)
+
+    def output(self, value):
+        lst = []
+        field = self.context.value_type
+        for v in value:
+            converted = IJSONGenerator(field).output(v)
+            if converted is not None:
+                lst.append(converted)
+        return lst
+
+    def input(self, item):
+        field = self.context.value_type
+        if item is None:
+            return []
+        return [
+            IJSONGenerator(field).input(sub_item)
+            for sub_item in item]
+
 class Datetime(grok.Adapter):
     grok.context(IDatetime)
     grok.implements(IJSONGenerator)
@@ -169,7 +203,7 @@ class Datetime(grok.Adapter):
 class Choice(grok.Adapter):
     grok.context(IChoice)
     grok.implements(IJSONGenerator)
-    
+
     def output(self, value):
         return value
 

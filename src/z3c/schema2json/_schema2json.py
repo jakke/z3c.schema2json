@@ -21,6 +21,8 @@ def serialize_to_dict(schema, instance):
 def serialize_to_tree(container, schema, instance):
     for name, field in getFieldsInOrder(schema):
         value = field.get(instance)
+        if not field.required and value is None:
+            continue
         container[name] = IJSONGenerator(field).output(value)
 
 def serialize(schema, instance, encoding='UTF-8',
